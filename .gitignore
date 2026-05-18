@@ -7,8 +7,8 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.log
-data/
-outputs/
+/data/
+/outputs/
 *.parquet
 *.arrow
 *.pt
