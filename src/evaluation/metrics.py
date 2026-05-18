@@ -9,6 +9,8 @@ from rouge_score import rouge_scorer
 
 
 def compute_bleu(predictions: list[str], references: list[str]) -> float:
+    if not predictions:
+        return 0.0
     return sacrebleu.corpus_bleu(predictions, [references]).score
 
 

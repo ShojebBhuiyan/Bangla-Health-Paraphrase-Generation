@@ -5,9 +5,16 @@ from pathlib import Path
 import pytest
 
 from src.common.config import load_config
+from src.common.paths import PROJECT_ROOT
 from src.spark.clean import clean
 from src.spark.deduplicate import deduplicate
 from src.spark.session import get_spark, stop_spark
+
+WINUTILS = PROJECT_ROOT / "hadoop" / "bin" / "winutils.exe"
+pytestmark = pytest.mark.skipif(
+    not WINUTILS.exists(),
+    reason="winutils.exe not installed; run scripts/setup_spark_windows.ps1",
+)
 
 
 @pytest.fixture(scope="module")

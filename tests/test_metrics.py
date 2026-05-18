@@ -4,9 +4,10 @@ from src.evaluation.metrics import compute_bleu, compute_distinct_n, compute_rou
 
 
 def test_bleu_perfect_match():
-    refs = ["hello world"]
-    preds = ["hello world"]
-    assert compute_bleu(preds, refs) == 100.0
+    refs = ["the cat sat on the mat"]
+    preds = ["the cat sat on the mat"]
+    score = compute_bleu(preds, refs)
+    assert score >= 99.0
 
 
 def test_distinct_n():

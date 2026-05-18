@@ -18,8 +18,26 @@ New-Item -ItemType Directory -Force -Path (Join-Path $ProjectRoot "outputs") | O
 
 if (-not (Test-Path $winutilsPath)) {
     Write-Host "Downloading winutils.exe for Hadoop 3.3..."
-    $url = "https://github.com/kontext-tech/winutils/raw/master/hadoop-3.3.5/bin/winutils.exe"
-    Invoke-WebRequest -Uri $url -OutFile $winutilsPath
+    $urls = @(
+        "https://github.com/kontext-tech/winutils/raw/master/hadoop-3.3.5/bin/winutils.exe",
+        "https://github.com/cdarlint/winutils/raw/master/hadoop-3.3.5/bin/winutils.exe"
+    )
+    $downloaded = $false
+    foreach ($url in $urls) {
+        try {
+            Invoke-WebRequest -Uri $url -OutFile $winutilsPath -UseBasicParsing -TimeoutSec 60
+            if ((Get-Item $winutilsPath).Length -gt 0) {
+                $downloaded = $true
+                break
+            }
+        } catch {
+            Write-Warning "Failed to download from $url : $_"
+        }
+    }
+    if (-not $downloaded) {
+        Write-Warning "Could not download winutils.exe. Spark checkpointing may fail on Windows."
+        Write-Warning "Manually place winutils.exe at: $winutilsPath"
+    }
 }
 
 $env:HADOOP_HOME = $hadoopDir
