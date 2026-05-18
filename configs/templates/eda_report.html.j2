@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EDA Report - Bangla Health Paraphrase</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1, h2 { color: #2E86AB; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background: #f0f4f8; }
+    img { max-width: 100%; margin: 1rem 0; border: 1px solid #ddd; }
+    .metric { font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Exploratory Data Analysis Report</h1>
+  <p><strong>Experiment:</strong> {{ experiment_name }}</p>
+  <p class="metric"><strong>Total rows:</strong> {{ total_rows }}</p>
+
+  <h2>Dataset Summary</h2>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>Source length (mean tokens)</td><td>{{ src_len_mean | round(2) }}</td></tr>
+    <tr><td>Target length (mean tokens)</td><td>{{ tgt_len_mean | round(2) }}</td></tr>
+    <tr><td>Length ratio (mean)</td><td>{{ len_ratio_mean | round(3) }}</td></tr>
+    <tr><td>Word overlap (mean)</td><td>{{ word_overlap_mean | round(3) }}</td></tr>
+    <tr><td>Vocabulary size</td><td>{{ vocab_size }}</td></tr>
+  </table>
+
+  <h2>Missing Values</h2>
+  <table>
+    <tr><th>Column</th><th>Null count</th></tr>
+    {% for col, count in null_counts.items() %}
+    <tr><td>{{ col }}</td><td>{{ count }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Top Tokens</h2>
+  <table>
+    <tr><th>Token</th><th>Count</th></tr>
+    {% for item in top_tokens[:20] %}
+    <tr><td>{{ item.token }}</td><td>{{ item.count }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Visualizations</h2>
+  {% for fig in figures %}
+  <h3>{{ fig.title }}</h3>
+  <img src="{{ fig.path }}" alt="{{ fig.title }}">
+  {% endfor %}
+</body>
+</html>
