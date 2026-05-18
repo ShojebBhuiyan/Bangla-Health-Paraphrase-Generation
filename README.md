@@ -1,8 +1,22 @@
 # Bangla Health Paraphrase Generation
 
-Research-grade Bangla healthcare paraphrase generation using PySpark, mT5 with LoRA, and distributed preprocessing.
+Research-grade Bangla healthcare paraphrase generation using PySpark distributed preprocessing, mT5 with LoRA fine-tuning, and multilingual baseline comparison.
 
-See [project_details.md](project_details.md) for research goals and [configs/experiment_config.yaml](configs/experiment_config.yaml) for experiment settings.
+## Research Hypotheses
+
+| ID | Hypothesis | How tested |
+|----|-----------|------------|
+| H1 | mT5 with LoRA outperforms full-FT baselines | Compare `mt5_lora` vs `mt5_baseline` and `mbart_baseline` on test BLEU/ROUGE/BERTScore |
+| H2 | Domain-specific preprocessing improves quality | Ablation: train mT5+LoRA on uncleaned data vs cleaned |
+| H3 | Data augmentation improves robustness | Toggle `training.use_augmented_train` in config |
+
+## Models
+
+| Key | Model | Training |
+|-----|-------|----------|
+| `mt5_lora` | google/mt5-small | LoRA (r=16) |
+| `mt5_baseline` | google/mt5-small | Full fine-tuning |
+| `mbart_baseline` | facebook/mbart-large-50 | Full FT with 8-bit Adam |
 
 ## Setup
 
@@ -13,14 +27,56 @@ pip install -r requirements.txt
 .\scripts\setup_spark_windows.ps1
 ```
 
-## Run
+For mBART 8-bit Adam on Windows, if `bitsandbytes` fails:
 
 ```powershell
+pip install bitsandbytes-windows-webui
+```
+
+## Quick Start
+
+```powershell
+# Full pipeline
 python scripts/run_preprocess.py
 python scripts/run_eda.py
 python scripts/run_augment.py
 python scripts/run_train.py --model mt5_lora
-python scripts/run_evaluate.py --model mt5_lora
+python scripts/run_evaluate.py
+
+# Or via task runner
+.\scripts\tasks.ps1 -Task preprocess
+.\scripts\tasks.ps1 -Task eda
+.\scripts\tasks.ps1 -Task train-mt5-lora
+.\scripts\tasks.ps1 -Task evaluate
 ```
 
-Or use the notebook workflow in `notebooks/`.
+## Dev Subset
+
+Set `dataset.dev_subset: 10000` in `configs/experiment_config.yaml` for fast smoke tests on a GTX 1070.
+
+## Outputs
+
+| Path | Contents |
+|------|----------|
+| `outputs/reports/eda_report.html` | EDA report |
+| `outputs/reports/final_report.html` | Final research report |
+| `outputs/metrics/summary.csv` | All model metrics |
+| `outputs/figures/` | PNG + PDF plots (300 DPI) |
+| `outputs/checkpoints/` | Trained models |
+| `outputs/mlruns/` | MLflow experiment tracking |
+
+## Notebook Workflow
+
+Run notebooks in order (`notebooks/00_setup.ipynb` through `07_results_visualization.ipynb`). Each stage checks checkpoint sentinels and skips completed work.
+
+## Dataset
+
+Source: [faisal4590aziz/bangla-health-related-paraphrased-dataset](https://huggingface.co/datasets/faisal4590aziz/bangla-health-related-paraphrased-dataset)
+
+Local copy: `datasets/all_paraphrased_data.csv` (~200K Bangla health paraphrase pairs).
+
+Splits: 80% train / 10% val / 10% test (seed=42).
+
+## Metrics
+
+BLEU, ROUGE-L, BERTScore (xlm-roberta-large), Distinct-1/2, Sentence-BERT cosine similarity (multilingual-mpnet + Bengali-sbert).
