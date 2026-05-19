@@ -20,12 +20,17 @@ Research-grade Bangla healthcare paraphrase generation using PySpark distributed
 
 ## Setup
 
+**Prerequisites:** Java 17+ (`JAVA_HOME`), [Apache Spark 4.1.x](https://spark.apache.org/downloads.html) unpacked to `C:\Spark` (or set `SPARK_HOME`).
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+pip uninstall pyspark -y   # if previously installed — use system Spark instead
 .\scripts\setup_spark_windows.ps1
 ```
+
+PySpark is **not** installed via pip. The project uses your system Spark (`SPARK_HOME`) for the JVM and Python bindings; the venv supplies ML deps (torch, transformers, bnlp, etc.). Workers run with `.venv\Scripts\python.exe` via `PYSPARK_PYTHON`.
 
 For mBART 8-bit Adam on Windows, if `bitsandbytes` fails:
 

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 
 from src.common.checkpointing import is_done, mark_done
 from src.common.config import AppConfig, ModelSpec, load_config
 from src.common.logging import get_logger
-from src.common.paths import DATA_DIR, PROJECT_ROOT
+from src.common.paths import DATA_DIR, parquet_data_files, parquet_split_ready
 from src.common.seed import set_seed
 
 logger = get_logger(__name__)
@@ -48,30 +48,26 @@ def tokenize_split(
     from transformers import AutoTokenizer
 
     parquet_path = _load_split_parquet(split, cfg)
-    if not parquet_path.exists():
-        raise FileNotFoundError(f"Split not found: {parquet_path}")
+    if not parquet_split_ready(parquet_path):
+        raise FileNotFoundError(
+            f"Split not found or empty (expected parquet file or Spark folder): {parquet_path}"
+        )
 
-    ds = load_dataset("parquet", data_files=str(parquet_path), split="train")
+    ds = load_dataset("parquet", data_files=parquet_data_files(parquet_path), split="train")
     tokenizer = AutoTokenizer.from_pretrained(model_spec.name)
     prefix, lang_kwargs = _model_prefix(model_spec.name)
 
     def preprocess(batch):
         inputs = [prefix + s for s in batch["source_sentence"]]
-        model_inputs = tokenizer(
+        return tokenizer(
             inputs,
+            text_target=batch["paraphrased_sentence"],
             max_length=cfg.dataset.max_input_length,
+            max_target_length=cfg.dataset.max_target_length,
             truncation=True,
             padding="max_length",
+            **lang_kwargs,
         )
-        with tokenizer.as_target_tokenizer():
-            labels = tokenizer(
-                batch["paraphrased_sentence"],
-                max_length=cfg.dataset.max_target_length,
-                truncation=True,
-                padding="max_length",
-            )
-        model_inputs["labels"] = labels["input_ids"]
-        return model_inputs
 
     tokenized = ds.map(preprocess, batched=True, remove_columns=ds.column_names)
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -13,7 +13,7 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from src.common.checkpointing import is_done, mark_done
 from src.common.config import AppConfig, ModelSpec, load_config
 from src.common.logging import get_logger
-from src.common.paths import DATA_DIR, PROJECT_ROOT
+from src.common.paths import DATA_DIR, PROJECT_ROOT, parquet_data_files
 from src.evaluation.bertscore import compute_bertscore
 from src.evaluation.metrics import compute_bleu, compute_distinct_n, compute_rouge_l
 from src.evaluation.semantic import compute_semantic_similarity
@@ -95,7 +95,7 @@ def evaluate_model(
     checkpoint_dir = PROJECT_ROOT / cfg.outputs.checkpoints / model_key
 
     test_path = DATA_DIR / "processed" / "test.parquet"
-    test_ds = load_dataset("parquet", data_files=str(test_path), split="train")
+    test_ds = load_dataset("parquet", data_files=parquet_data_files(test_path), split="train")
     sources = test_ds["source_sentence"]
     references = test_ds["paraphrased_sentence"]
 

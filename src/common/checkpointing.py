@@ -26,8 +26,17 @@ def stage_path(stage_name: str, config: AppConfig | None = None) -> Path:
     return _stages_dir(config) / f"{safe_name}.ok"
 
 
-def is_done(stage_name: str, config: AppConfig | None = None) -> bool:
-    return stage_path(stage_name, config).exists()
+def is_done(
+    stage_name: str,
+    config: AppConfig | None = None,
+    *,
+    artifacts: list[Path] | None = None,
+) -> bool:
+    if not stage_path(stage_name, config).exists():
+        return False
+    if artifacts is None:
+        return True
+    return all(p.exists() for p in artifacts)
 
 
 def mark_done(stage_name: str, metadata: dict | None = None, config: AppConfig | None = None) -> Path:

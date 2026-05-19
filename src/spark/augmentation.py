@@ -1,18 +1,16 @@
-"""Bangla token-level EDA augmentation in Spark."""
+"""Bangla token-level EDA augmentation (driver-side; avoids Windows Python worker issues)."""
 
 from __future__ import annotations
 
 import random
 from pathlib import Path
 
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
-from pyspark.sql.types import StringType
+import pandas as pd
 
 from src.common.checkpointing import is_done, mark_done
 from src.common.config import AppConfig, load_config
 from src.common.logging import get_logger
-from src.common.paths import DATA_DIR
+from src.common.paths import DATA_DIR, parquet_split_ready
 from src.common.seed import set_seed
 
 logger = get_logger(__name__)
@@ -77,25 +75,16 @@ def _augment_text(
     return " ".join(new_tokens)
 
 
-@F.udf(StringType())
-def augment_source_udf(
-    text: str,
-    synonym_prob: float,
-    swap_prob: float,
-    deletion_prob: float,
-    min_tokens: int,
-) -> str:
-    return _augment_text(text, synonym_prob, swap_prob, deletion_prob, int(min_tokens))
-
-
 def augment_train(config: AppConfig | None = None, force: bool = False) -> Path:
     cfg = config or load_config()
     set_seed(cfg.experiment.seed)
 
-    if not force and is_done("augmentation", cfg):
-        out = DATA_DIR / "augmented" / "train.parquet"
+    out = DATA_DIR / "augmented" / "train.parquet"
+    if not force and is_done("augmentation", cfg) and parquet_split_ready(out):
         logger.info("Augmentation already complete: %s", out)
         return out
+    if not force and is_done("augmentation", cfg):
+        logger.warning("Augmentation sentinel exists but output is missing; re-running")
 
     from src.spark.session import get_spark
 
@@ -104,26 +93,30 @@ def augment_train(config: AppConfig | None = None, force: bool = False) -> Path:
     if not train_path.exists():
         raise FileNotFoundError("Run preprocessing before augmentation")
 
-    train_df = spark.read.parquet(str(train_path))
     aug = cfg.augmentation
+    pdf = spark.read.parquet(str(train_path)).toPandas()
+    logger.info("Augmenting %d training rows on driver", len(pdf))
 
-    augmented = train_df.withColumn(
-        "source_sentence",
-        augment_source_udf(
-            F.col("source_sentence"),
-            F.lit(aug.synonym_prob),
-            F.lit(aug.swap_prob),
-            F.lit(aug.deletion_prob),
-            F.lit(aug.min_tokens_after_aug),
-        ),
-    ).withColumn("is_augmented", F.lit(True))
+    augment_fn = lambda s: _augment_text(
+        s,
+        aug.synonym_prob,
+        aug.swap_prob,
+        aug.deletion_prob,
+        aug.min_tokens_after_aug,
+    )
 
-    original = train_df.withColumn("is_augmented", F.lit(False))
-    combined = original.unionByName(augmented, allowMissingColumns=True)
+    original = pdf.copy()
+    original["is_augmented"] = False
 
-    out_path = DATA_DIR / "augmented" / "train.parquet"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.write.mode("overwrite").parquet(str(out_path))
-    mark_done("augmentation", {"rows": combined.count()}, cfg)
-    logger.info("Augmented train set saved: %s (%d rows)", out_path, combined.count())
-    return out_path
+    augmented = pdf.copy()
+    augmented["source_sentence"] = augmented["source_sentence"].map(augment_fn)
+    augmented["is_augmented"] = True
+
+    combined = pd.concat([original, augmented], ignore_index=True)
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    spark.createDataFrame(combined).write.mode("overwrite").parquet(str(out))
+    row_count = len(combined)
+    mark_done("augmentation", {"rows": row_count}, cfg)
+    logger.info("Augmented train set saved: %s (%d rows)", out, row_count)
+    return out

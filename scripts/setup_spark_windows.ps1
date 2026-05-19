@@ -40,11 +40,31 @@ if (-not (Test-Path $winutilsPath)) {
     }
 }
 
+$venvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
+if (Test-Path $venvPython) {
+    $pythonExe = $venvPython
+} else {
+    $pythonExe = (Get-Command python).Source
+}
+
+if (-not $env:SPARK_HOME -and (Test-Path "C:\Spark\bin\spark-submit.cmd")) {
+    $env:SPARK_HOME = "C:\Spark"
+}
+
 $env:HADOOP_HOME = $hadoopDir
 $env:PATH = "$binDir;$env:PATH"
-$env:PYSPARK_PYTHON = (Get-Command python).Source
-$env:PYSPARK_DRIVER_PYTHON = $env:PYSPARK_PYTHON
+$env:PYSPARK_PYTHON = $pythonExe
+$env:PYSPARK_DRIVER_PYTHON = $pythonExe
 $env:SPARK_LOCAL_IP = "127.0.0.1"
 
-Set-Content -Path $sentinelPath -Value "HADOOP_HOME=$hadoopDir`nConfigured at $(Get-Date -Format o)"
-Write-Host "Spark Windows setup complete. HADOOP_HOME=$hadoopDir"
+$lines = @(
+    "HADOOP_HOME=$hadoopDir"
+    "SPARK_HOME=$($env:SPARK_HOME)"
+    "PYSPARK_PYTHON=$pythonExe"
+    "Configured at $(Get-Date -Format o)"
+)
+Set-Content -Path $sentinelPath -Value ($lines -join "`n")
+Write-Host "Spark Windows setup complete."
+Write-Host "  HADOOP_HOME=$hadoopDir"
+Write-Host "  SPARK_HOME=$($env:SPARK_HOME)"
+Write-Host "  PYSPARK_PYTHON=$pythonExe"

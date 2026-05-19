@@ -21,7 +21,7 @@ spark:
   executor_memory: 8g
   enable_arrow: true
   near_dup_jaccard_threshold: 0.95
-  near_dup_enabled: true
+  near_dup_enabled: false
 
 models:
   main:

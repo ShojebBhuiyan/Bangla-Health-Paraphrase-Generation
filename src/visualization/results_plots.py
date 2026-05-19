@@ -10,7 +10,7 @@ import pandas as pd
 
 from src.common.config import load_config
 from src.common.logging import get_logger
-from src.common.paths import PROJECT_ROOT
+from src.common.paths import PROJECT_ROOT, mlflow_tracking_uri
 from src.visualization.plots import plot_bar_comparison, plot_training_curves
 from src.visualization.tables import export_results
 
@@ -54,7 +54,7 @@ def plot_mlflow_loss_curves() -> None:
     figures_dir = PROJECT_ROOT / cfg.outputs.figures / "training"
     figures_dir.mkdir(parents=True, exist_ok=True)
 
-    mlflow.set_tracking_uri(str(PROJECT_ROOT / cfg.mlflow.tracking_uri))
+    mlflow.set_tracking_uri(mlflow_tracking_uri(cfg.mlflow.tracking_uri))
     experiment = mlflow.get_experiment_by_name(cfg.mlflow.experiment_name)
     if not experiment:
         return

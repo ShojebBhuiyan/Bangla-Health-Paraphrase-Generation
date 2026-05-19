@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import mlflow
@@ -16,7 +17,7 @@ from transformers import (
 from src.common.checkpointing import is_done, mark_done
 from src.common.config import AppConfig, ModelSpec, load_config
 from src.common.logging import get_logger
-from src.common.paths import PROJECT_ROOT
+from src.common.paths import PROJECT_ROOT, mlflow_tracking_uri
 from src.common.seed import set_seed
 from src.data.datamodule import load_tokenized_splits
 from src.training.callbacks import CheckpointStateCallback, MetricsLoggerCallback
@@ -80,7 +81,7 @@ def train_model(
     splits = load_tokenized_splits(model_spec, cfg)
     args = build_training_args(model_spec, output_dir, cfg)
 
-    mlflow.set_tracking_uri(str(PROJECT_ROOT / cfg.mlflow.tracking_uri))
+    mlflow.set_tracking_uri(mlflow_tracking_uri(cfg.mlflow.tracking_uri))
     mlflow.set_experiment(cfg.mlflow.experiment_name)
 
     callbacks = [
@@ -99,14 +100,19 @@ def train_model(
             "Reduce batch size or enable gradient checkpointing."
         )
 
+    tokenizer_kw = (
+        "processing_class"
+        if "processing_class" in inspect.signature(Seq2SeqTrainer.__init__).parameters
+        else "tokenizer"
+    )
     trainer = Seq2SeqTrainer(
         model=model,
         args=args,
         train_dataset=splits["train"],
         eval_dataset=splits["val"],
-        tokenizer=tokenizer,
         data_collator=collator,
         callbacks=callbacks,
+        **{tokenizer_kw: tokenizer},
     )
 
     resume = None

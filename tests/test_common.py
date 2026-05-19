@@ -7,6 +7,13 @@ import yaml
 
 from src.common.checkpointing import is_done, mark_done, stage_path
 from src.common.config import AppConfig, load_config
+from src.common.paths import mlflow_tracking_uri, parquet_data_files, parquet_split_ready
+from src.common.reload import assert_preprocess_pipeline, reload_preprocess_modules
+
+
+def test_preprocess_pipeline_order():
+    reload_preprocess_modules()
+    assert_preprocess_pipeline()
 
 
 def test_load_config_validates():
@@ -42,6 +49,22 @@ def test_checkpointing(tmp_path: Path, monkeypatch):
     mark_done("test_stage", {"rows": 100}, fake)
     assert is_done("test_stage", fake)
     assert stage_path("test_stage", fake).exists()
+
+    missing = tmp_path / "missing.parquet"
+    assert not is_done("test_stage", fake, artifacts=[missing])
+    missing.touch()
+    assert is_done("test_stage", fake, artifacts=[missing])
+
+
+def test_parquet_split_helpers(tmp_path: Path):
+    spark_dir = tmp_path / "train.parquet"
+    spark_dir.mkdir()
+    assert not parquet_split_ready(spark_dir)
+    part = spark_dir / "part-00000.parquet"
+    part.write_bytes(b"x")
+    assert parquet_split_ready(spark_dir)
+    assert parquet_data_files(spark_dir).endswith("*.parquet")
+    assert parquet_data_files(part) == str(part)
 
 
 def test_config_from_temp_yaml(tmp_path: Path):
@@ -99,3 +122,15 @@ def test_config_from_temp_yaml(tmp_path: Path):
     path.write_text(yaml.dump(data), encoding="utf-8")
     cfg = load_config(path)
     assert cfg.experiment.name == "test"
+
+
+def test_mlflow_tracking_uri_local_path(tmp_path: Path):
+    root = tmp_path / "proj"
+    uri = mlflow_tracking_uri("outputs/mlruns", root=root)
+    assert uri.startswith("file://")
+    assert uri.endswith("/outputs/mlruns")
+
+
+def test_mlflow_tracking_uri_passthrough():
+    remote = "http://127.0.0.1:5000"
+    assert mlflow_tracking_uri(remote) == remote

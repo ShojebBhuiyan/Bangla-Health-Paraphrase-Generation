@@ -1,4 +1,4 @@
-pyspark==3.5.4
+# PySpark: use system Spark (SPARK_HOME, e.g. C:\Spark 4.1.x) — see README
 pyarrow>=15.0.0
 transformers>=4.44.0
 datasets>=2.20.0
