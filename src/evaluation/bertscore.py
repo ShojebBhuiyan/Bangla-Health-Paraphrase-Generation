@@ -14,6 +14,8 @@ def compute_bertscore(
     references: list[str],
     model_type: str = "xlm-roberta-large",
 ) -> float:
+    predictions = list(predictions)
+    references = list(references)
     if not predictions:
         return 0.0
     try:

@@ -59,6 +59,40 @@ def plot_bar_comparison(
     return save_figure(fig, out)
 
 
+def plot_combined_metric_comparison(
+    labels: list[str],
+    metrics: dict[str, list[float]],
+    title: str,
+    out: Path,
+    *,
+    ncols: int = 3,
+) -> tuple[Path, Path]:
+    """Bar charts for multiple metrics in a single figure (subplot grid)."""
+    setup_style()
+    metric_names = list(metrics.keys())
+    n = len(metric_names)
+    ncols = min(ncols, n) if n else 1
+    nrows = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(4.2 * ncols, 3.8 * nrows))
+    flat_axes = [axes] if n == 1 else list(axes.flat) if hasattr(axes, "flat") else [axes]
+
+    bar_color = "#2E86AB"
+    for ax, metric in zip(flat_axes, metric_names):
+        x = range(len(labels))
+        ax.bar(list(x), metrics[metric], color=bar_color, edgecolor="white", alpha=0.85)
+        ax.set_xticks(list(x))
+        ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=9)
+        ax.set_title(metric)
+        ax.set_ylabel("Score")
+
+    for ax in flat_axes[n:]:
+        ax.set_visible(False)
+
+    fig.suptitle(title, fontsize=14, y=1.02)
+    fig.tight_layout()
+    return save_figure(fig, out)
+
+
 def plot_training_curves(
     steps: list[int],
     train_loss: list[float],

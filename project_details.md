@@ -30,7 +30,7 @@ Dataset can be found inside the datasets folder.
 
 ## Hypotheses
 
-H1: mT5 with LoRA will outperform T5 and BART.
+H1: mT5 with LoRA will outperform full fine-tuning on the same mT5 backbone.
 
 H2: Domain-specific preprocessing improves quality.
 
@@ -38,8 +38,7 @@ H3: Data augmentation improves robustness.
 
 ## Baselines
 
-- t5-small
-- facebook/bart-base
+- google/mt5-small (full fine-tuning; same backbone as main model)
 
 ## Main Model
 

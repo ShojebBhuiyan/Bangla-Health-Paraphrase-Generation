@@ -34,6 +34,7 @@ def _load_model(model_spec: ModelSpec, checkpoint_dir: Path):
         model = base
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device).eval()
+    model.config.tie_word_embeddings = False
     return model, tokenizer, device
 
 
@@ -96,8 +97,8 @@ def evaluate_model(
 
     test_path = DATA_DIR / "processed" / "test.parquet"
     test_ds = load_dataset("parquet", data_files=parquet_data_files(test_path), split="train")
-    sources = test_ds["source_sentence"]
-    references = test_ds["paraphrased_sentence"]
+    sources = list(test_ds["source_sentence"])
+    references = list(test_ds["paraphrased_sentence"])
 
     model, tokenizer, device = _load_model(spec, checkpoint_dir)
     predictions = generate_predictions(model, tokenizer, sources, spec.name, cfg, device)

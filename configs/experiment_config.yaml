@@ -17,8 +17,8 @@ dataset:
 spark:
   app_name: BanglaHealthParaphrasing
   shuffle_partitions: 200
-  driver_memory: 8g
-  executor_memory: 8g
+  driver_memory: 6g
+  executor_memory: 6g
   enable_arrow: true
   near_dup_jaccard_threshold: 0.95
   near_dup_enabled: false
@@ -33,19 +33,14 @@ models:
     gradient_accumulation_steps: 4
 
   baselines:
+    # Full-FT mT5 baseline for H1 (LoRA vs same-backbone full FT).
+    # mBART-large-50 omitted: very slow on consumer GPUs; re-enable in config if needed.
     - name: google/mt5-small
       key: mt5_baseline
       use_lora: false
       train_batch_size: 4
       eval_batch_size: 4
       gradient_accumulation_steps: 8
-    - name: facebook/mbart-large-50
-      key: mbart_baseline
-      use_lora: false
-      train_batch_size: 1
-      eval_batch_size: 1
-      gradient_accumulation_steps: 32
-      optim: adamw_bnb_8bit
 
 lora:
   r: 16

@@ -20,7 +20,6 @@ train-mt5-lora:
 
 train-baselines:
 	python scripts/run_train.py --model mt5_baseline
-	python scripts/run_train.py --model mbart_baseline
 
 evaluate:
 	python scripts/run_evaluate.py

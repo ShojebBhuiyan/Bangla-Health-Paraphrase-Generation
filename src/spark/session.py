@@ -62,7 +62,12 @@ def get_spark(config: AppConfig | None = None) -> SparkSession:
     )
 
     if log4j.exists():
-        builder = builder.config("spark.driver.extraJavaOptions", f"-Dlog4j2.configurationFile=file:///{log4j.as_posix()}")
+        # as_uri() percent-encodes spaces (e.g. "Study Material") — required on Windows
+        log4j_uri = log4j.resolve().as_uri()
+        builder = builder.config(
+            "spark.driver.extraJavaOptions",
+            f"-Dlog4j2.configurationFile={log4j_uri}",
+        )
 
     logger.info("Using system Spark at %s (Python %s)", spark_home, python)
     _spark_instance = builder.getOrCreate()

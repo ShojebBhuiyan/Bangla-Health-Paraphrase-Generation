@@ -11,7 +11,11 @@ import pandas as pd
 from src.common.config import load_config
 from src.common.logging import get_logger
 from src.common.paths import PROJECT_ROOT, mlflow_tracking_uri
-from src.visualization.plots import plot_bar_comparison, plot_training_curves
+from src.visualization.plots import (
+    plot_bar_comparison,
+    plot_combined_metric_comparison,
+    plot_training_curves,
+)
 from src.visualization.tables import export_results
 
 logger = get_logger(__name__)
@@ -37,15 +41,24 @@ def plot_metric_comparisons() -> None:
     labels = df["model_key"].tolist()
     metric_cols = ["BLEU", "ROUGE-L", "BERTScore", "Distinct-1", "Distinct-2", "semsim_mpnet", "semsim_bnsbert"]
 
-    for metric in metric_cols:
-        if metric not in df.columns:
-            continue
+    available = [m for m in metric_cols if m in df.columns]
+    combined: dict[str, list[float]] = {}
+    for metric in available:
+        combined[metric] = df[metric].tolist()
         plot_bar_comparison(
             labels,
             {metric: df[metric].tolist()},
             f"{metric} Comparison",
             metric,
             figures_dir / f"{metric.lower()}_comparison",
+        )
+
+    if combined:
+        plot_combined_metric_comparison(
+            labels,
+            combined,
+            "Model Comparison — All Metrics",
+            figures_dir / "all_metrics_comparison",
         )
 
 
