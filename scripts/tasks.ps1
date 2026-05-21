@@ -19,7 +19,6 @@ switch ($Task) {
     "train-mt5-lora" { python scripts/run_train.py --model mt5_lora }
     "train-baselines" {
         python scripts/run_train.py --model mt5_baseline
-        python scripts/run_train.py --model mbart_baseline
     }
     "evaluate" { python scripts/run_evaluate.py }
     "test" { pytest tests/ -v }

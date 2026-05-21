@@ -6,7 +6,7 @@ Research-grade Bangla healthcare paraphrase generation using PySpark distributed
 
 | ID | Hypothesis | How tested |
 |----|-----------|------------|
-| H1 | mT5 with LoRA outperforms full-FT baselines | Compare `mt5_lora` vs `mt5_baseline` and `mbart_baseline` on test BLEU/ROUGE/BERTScore |
+| H1 | mT5 with LoRA outperforms full-FT baseline on the same backbone | Compare `mt5_lora` vs `mt5_baseline` on test BLEU/ROUGE/BERTScore |
 | H2 | Domain-specific preprocessing improves quality | Ablation: train mT5+LoRA on uncleaned data vs cleaned |
 | H3 | Data augmentation improves robustness | Toggle `training.use_augmented_train` in config |
 
@@ -16,7 +16,6 @@ Research-grade Bangla healthcare paraphrase generation using PySpark distributed
 |-----|-------|----------|
 | `mt5_lora` | google/mt5-small | LoRA (r=16) |
 | `mt5_baseline` | google/mt5-small | Full fine-tuning |
-| `mbart_baseline` | facebook/mbart-large-50 | Full FT with 8-bit Adam |
 
 ## Setup
 
@@ -31,12 +30,6 @@ pip uninstall pyspark -y   # if previously installed — use system Spark instea
 ```
 
 PySpark is **not** installed via pip. The project uses your system Spark (`SPARK_HOME`) for the JVM and Python bindings; the venv supplies ML deps (torch, transformers, bnlp, etc.). Workers run with `.venv\Scripts\python.exe` via `PYSPARK_PYTHON`.
-
-For mBART 8-bit Adam on Windows, if `bitsandbytes` fails:
-
-```powershell
-pip install bitsandbytes-windows-webui
-```
 
 ## Quick Start
 

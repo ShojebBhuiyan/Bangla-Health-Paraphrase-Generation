@@ -1,4 +1,4 @@
-"""mBART-large-50 full fine-tuning with 8-bit Adam."""
+"""mBART-large-50 full fine-tuning with 8-bit Adam (optional; not in default experiment config)."""
 
 from __future__ import annotations
 

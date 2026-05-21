@@ -13,6 +13,7 @@ def build_mt5_baseline(config: AppConfig | None = None):
     spec = next(s for s in cfg.all_model_specs() if s.key == "mt5_baseline")
     tokenizer = AutoTokenizer.from_pretrained(spec.name)
     model = AutoModelForSeq2SeqLM.from_pretrained(spec.name)
+    model.config.tie_word_embeddings = False
     return model, tokenizer, spec
 
 

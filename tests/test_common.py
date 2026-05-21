@@ -22,16 +22,15 @@ def test_load_config_validates():
     assert cfg.experiment.seed == 42
     assert cfg.dataset.train_split == 0.8
     assert cfg.models.main.key == "mt5_lora"
-    assert len(cfg.models.baselines) == 2
+    assert len(cfg.models.baselines) == 1
 
 
 def test_all_model_specs():
     cfg = load_config()
     specs = cfg.all_model_specs()
-    assert len(specs) == 3
+    assert len(specs) == 2
     assert specs[0].key == "mt5_lora"
     assert specs[1].key == "mt5_baseline"
-    assert specs[2].key == "mbart_baseline"
 
 
 def test_checkpointing(tmp_path: Path, monkeypatch):
